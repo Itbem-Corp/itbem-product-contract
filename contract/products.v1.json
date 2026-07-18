@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "products": [
+    {
+      "code": "eventiapp",
+      "identity": { "name": "EventiApp", "productLabel": "Event operations", "accent": "#818cf8" },
+      "capabilities": { "allowsPlatformAuthority": true, "supportsEventOperations": true },
+      "modules": ["home", "events", "metrics"],
+      "deployment": {
+        "dashboardHostname": "dashboard.eventiapp.com.mx",
+        "dashboardHostnames": ["dashboard.eventiapp.com.mx"],
+        "localDashboardHostnames": ["localhost", "127.0.0.1", "dashboard.eventiapp.localhost"],
+        "apiHostname": "api.eventiapp.com.mx",
+        "cognitoClientEnv": "COGNITO_EVENTIAPP_CLIENT_ID",
+        "emailDomain": "eventiapp.com.mx"
+      },
+      "worker": { "productionTopic": "eventiapp-prod-worker-jobs" }
+    },
+    {
+      "code": "itbem",
+      "identity": { "name": "ITBEM", "productLabel": "Business operations", "accent": "#22d3ee" },
+      "capabilities": { "allowsPlatformAuthority": true, "supportsEventOperations": false },
+      "modules": ["home", "users", "organizations", "metrics"],
+      "deployment": {
+        "dashboardHostname": "dashboard.itbem.com.mx",
+        "dashboardHostnames": ["dashboard.itbem.com.mx", "dashboard.itbem.com"],
+        "localDashboardHostnames": ["dashboard.itbem.localhost"],
+        "apiHostname": "api.itbem.com.mx",
+        "cognitoClientEnv": "COGNITO_ITBEM_CLIENT_ID",
+        "emailDomain": "itbem.com.mx"
+      },
+      "worker": { "productionTopic": "itbem-prod-worker-jobs" }
+    },
+    {
+      "code": "cafettonhouse",
+      "identity": { "name": "Cafetton House", "productLabel": "Client operations", "accent": "#d97706" },
+      "capabilities": { "allowsPlatformAuthority": false, "supportsEventOperations": false },
+      "modules": ["home", "users", "organizations", "metrics"],
+      "deployment": {
+        "dashboardHostname": "dashboard.cafettonhouse.com",
+        "dashboardHostnames": ["dashboard.cafettonhouse.com"],
+        "localDashboardHostnames": ["dashboard.cafettonhouse.localhost"],
+        "apiHostname": "api.cafettonhouse.com",
+        "cognitoClientEnv": "COGNITO_CAFETTONHOUSE_CLIENT_ID",
+        "emailDomain": "cafettonhouse.com"
+      },
+      "worker": { "productionTopic": "cafetton-prod-worker-jobs" }
+    }
+  ]
+}

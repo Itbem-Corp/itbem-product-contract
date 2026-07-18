@@ -1,0 +1,11 @@
+{
+  "name": "@itbem/product-contract",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "catalog:dashboard": "node scripts/render-dashboard-catalog.mjs"
+  }
+}
