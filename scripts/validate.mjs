@@ -1,4 +1,5 @@
 import { loadContract } from './contract.mjs'
+import fs from 'node:fs'
 
 const contract = loadContract()
 if (contract.schemaVersion !== 1 || !Array.isArray(contract.products) || contract.products.length === 0) {
@@ -36,4 +37,17 @@ for (const product of contract.products) {
   apiHosts.add(deployment.apiHostname)
   if (workerTopics.has(worker?.productionTopic)) throw new Error(`Duplicate worker topic: ${worker?.productionTopic}`)
   workerTopics.add(worker?.productionTopic)
+}
+
+const requestContext = JSON.parse(fs.readFileSync(new URL('../contract/request-context.v1.json', import.meta.url), 'utf8'))
+if (requestContext.schemaVersion !== 1) throw new Error('Request context contract must use schemaVersion 1')
+const headerNames = Object.values(requestContext.headers ?? {})
+if (headerNames.length !== 4 || new Set(headerNames).size !== headerNames.length) {
+  throw new Error('Request context contract must declare four unique headers')
+}
+if (!requestContext.workspaceModes?.includes('organization') || !requestContext.workspaceModes?.includes('platform')) {
+  throw new Error('Request context contract must declare organization and platform modes')
+}
+if (requestContext.rules?.headersAreAuthorization !== false) {
+  throw new Error('Request context headers must never grant authorization')
 }

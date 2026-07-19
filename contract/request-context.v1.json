@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "headers": {
+    "applicationCode": "X-Application-Code",
+    "workspaceMode": "X-Workspace-Mode",
+    "organizationId": "X-Organization-ID",
+    "organizationContext": "X-Organization-Context"
+  },
+  "workspaceModes": ["organization", "platform"],
+  "rules": {
+    "bootstrapHeaders": ["applicationCode"],
+    "organizationRequiresOrganizationId": true,
+    "platformForbidsOrganizationId": true,
+    "headersAreAuthorization": false
+  }
+}

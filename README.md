@@ -2,6 +2,8 @@
 
 This is the versioned, language-neutral source of truth for product identity,
 capabilities, public entry points, Cognito environment keys and worker topics.
+The request-context contract also owns the dashboard-to-API header names and
+workspace invariants shared by frontend and backend projections.
 It contains no credentials, account IDs, database configuration or runtime
 secrets.
 
