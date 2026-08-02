@@ -6,6 +6,8 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "validate": "node scripts/validate.mjs",
+    "check:fast": "node scripts/validate.mjs",
+    "check": "node scripts/validate.mjs",
     "catalog:dashboard": "node scripts/render-dashboard-catalog.mjs"
   }
 }
