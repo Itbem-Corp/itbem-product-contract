@@ -51,3 +51,24 @@ if (!requestContext.workspaceModes?.includes('organization') || !requestContext.
 if (requestContext.rules?.headersAreAuthorization !== false) {
   throw new Error('Request context headers must never grant authorization')
 }
+
+const runtimeMessages = JSON.parse(fs.readFileSync(new URL('../contract/runtime-messages.v1.json', import.meta.url), 'utf8'))
+if (runtimeMessages.schemaVersion !== 1) throw new Error('Runtime message contract must use schemaVersion 1')
+const mediaFixture = runtimeMessages.mediaProcessing?.sqsFixtures?.[0]?.message
+if (!mediaFixture || mediaFixture.target_type !== 'moment' || mediaFixture.is_video !== false) {
+  throw new Error('Runtime message contract must contain an image moment SQS fixture')
+}
+for (const key of ['moment_id', 'event_id', 'job_id', 'object_key', 'raw_s3_key', 'bucket', 'content_type']) {
+  if (!mediaFixture[key]) throw new Error(`Media SQS fixture is missing ${key}`)
+}
+const callbackFixture = runtimeMessages.mediaProcessing?.callbackFixtures?.[0]?.payload
+if (!callbackFixture || callbackFixture.processing_status !== 'done' || !callbackFixture.object_key || !callbackFixture.content_url) {
+  throw new Error('Runtime message contract must contain a terminal media callback fixture')
+}
+const workerFixture = runtimeMessages.workerJobs?.[0]?.envelope
+if (!workerFixture || workerFixture.schema_version !== 2 || workerFixture.type !== 'analytics.rollup') {
+  throw new Error('Runtime message contract must contain an analytics.rollup v2 fixture')
+}
+if (!workerFixture.payload?.event_id || workerFixture.payload?.trigger !== 'analytics_read') {
+  throw new Error('Analytics worker fixture has an invalid payload')
+}

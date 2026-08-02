@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "mediaProcessing": {
+    "sqsFixtures": [
+      {
+        "name": "image-moment-v1",
+        "message": {
+          "application": "eventiapp",
+          "correlation_id": "request-runtime-contract-001",
+          "source_revision": "0123456789abcdef0123456789abcdef01234567",
+          "target_type": "moment",
+          "moment_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+          "event_id": "b6d767d2-f8ed-4b3b-a97b-3f3e4b4c7a31",
+          "job_id": "d3331d1d-9d6d-4f9e-a89a-5124215c6269",
+          "generation": 2,
+          "object_key": "moments/b6d767d2-f8ed-4b3b-a97b-3f3e4b4c7a31/raw/7c9e6679-7425-40de-944b-e07fc1f90ae7.jpg",
+          "raw_s3_key": "moments/b6d767d2-f8ed-4b3b-a97b-3f3e4b4c7a31/raw/7c9e6679-7425-40de-944b-e07fc1f90ae7.jpg",
+          "bucket": "eventiapp-media-contract-fixture",
+          "content_type": "image/jpeg",
+          "is_video": false
+        }
+      }
+    ],
+    "callbackFixtures": [
+      {
+        "name": "moment-done-v1",
+        "payload": {
+          "application": "eventiapp",
+          "correlation_id": "request-runtime-contract-001",
+          "job_id": "d3331d1d-9d6d-4f9e-a89a-5124215c6269",
+          "generation": 2,
+          "object_key": "moments/b6d767d2-f8ed-4b3b-a97b-3f3e4b4c7a31/7c9e6679-7425-40de-944b-e07fc1f90ae7.webp",
+          "content_url": "moments/b6d767d2-f8ed-4b3b-a97b-3f3e4b4c7a31/7c9e6679-7425-40de-944b-e07fc1f90ae7.webp",
+          "processing_status": "done",
+          "event_id": "b6d767d2-f8ed-4b3b-a97b-3f3e4b4c7a31",
+          "processing_duration_ms": 4823,
+          "original_size_bytes": 8945123,
+          "optimized_size_bytes": 312048
+        }
+      }
+    ]
+  },
+  "workerJobs": [
+    {
+      "name": "analytics-rollup-v2",
+      "envelope": {
+        "schema_version": 2,
+        "job_id": "d3331d1d-9d6d-4f9e-a89a-5124215c6269",
+        "occurred_at": "2026-07-12T18:00:00Z",
+        "tenant_code": "itbem",
+        "correlation_id": "request-runtime-contract-001",
+        "type": "analytics.rollup",
+        "payload": {
+          "event_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+          "requested_at": "2026-07-12T18:00:00Z",
+          "trigger": "analytics_read"
+        }
+      }
+    }
+  ]
+}
