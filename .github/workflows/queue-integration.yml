@@ -2,10 +2,8 @@ name: Queue contract integration
 
 on:
   pull_request:
-    paths: [contract/runtime-messages.v1.json, scripts/verify-queue-integration.sh, .github/workflows/queue-integration.yml]
   push:
     branches: [main]
-    paths: [contract/runtime-messages.v1.json, scripts/verify-queue-integration.sh, .github/workflows/queue-integration.yml]
 
 permissions:
   contents: read
