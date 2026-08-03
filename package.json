@@ -6,6 +6,7 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "validate": "node scripts/validate.mjs",
+    "test": "node --test test/invariants.test.mjs",
     "check:fast": "node scripts/validate.mjs",
     "check": "node scripts/validate.mjs",
     "catalog:dashboard": "node scripts/render-dashboard-catalog.mjs"

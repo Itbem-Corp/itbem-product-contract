@@ -1,0 +1,97 @@
+const hostnamePattern = /^(?=.{1,253}$)(?!-)[a-z0-9-]+(?:\.(?!-)[a-z0-9-]+)+$/
+const environmentVariablePattern = /^[A-Z][A-Z0-9_]*$/
+const workerTopicPattern = /^[a-z][a-z0-9-]{0,79}$/
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message)
+}
+
+function assertUnique(values, value, label) {
+  assert(!values.has(value), `Duplicate ${label}: ${value}`)
+  values.add(value)
+}
+
+export function validateProductContract(contract) {
+  assert(contract?.schemaVersion === 1 && Array.isArray(contract.products) && contract.products.length > 0,
+    'Contract must declare schemaVersion 1 and at least one product')
+
+  const codes = new Set()
+  const hosts = new Set()
+  const localHosts = new Set()
+  const apiHosts = new Set()
+  const clientIdEnvironments = new Set()
+  const emailDomains = new Set()
+  const workerTopics = new Set()
+
+  for (const product of contract.products) {
+    const { code, identity, capabilities, modules, deployment, worker } = product
+    assert(/^[a-z][a-z0-9-]*$/.test(code) && !codes.has(code), `Invalid or duplicate product code: ${code}`)
+    codes.add(code)
+    assert(identity?.name && identity?.productLabel && /^#[0-9a-fA-F]{6}$/.test(identity?.accent ?? ''),
+      `${code} has incomplete visual identity`)
+    assert(typeof capabilities?.allowsPlatformAuthority === 'boolean' && typeof capabilities?.supportsEventOperations === 'boolean',
+      `${code} must declare boolean capabilities`)
+    assert(capabilities.supportsEventOperations === (code === 'eventiapp'), 'Event operations are exclusive to eventiapp')
+    assert(Array.isArray(modules) && modules.includes('home'), `${code} must contain the home module`)
+    assert(modules.every((module) => /^[a-z][a-z0-9-]*$/.test(module)), `${code} has an invalid module name`)
+    assert(new Set(modules).size === modules.length, `${code} has duplicate modules`)
+
+    assert(deployment && typeof deployment === 'object', `${code} has no deployment definition`)
+    assert(hostnamePattern.test(deployment.dashboardHostname ?? ''), `${code} has an invalid dashboard hostname`)
+    assert(Array.isArray(deployment.dashboardHostnames) && deployment.dashboardHostnames.includes(deployment.dashboardHostname),
+      `${code} primary dashboard hostname must be declared`)
+    assert(deployment.dashboardHostnames.every((host) => hostnamePattern.test(host)), `${code} has an invalid dashboard hostname alias`)
+    assert(new Set(deployment.dashboardHostnames).size === deployment.dashboardHostnames.length, `${code} has duplicate dashboard hostname aliases`)
+    for (const host of deployment.dashboardHostnames) assertUnique(hosts, host, 'dashboard hostname')
+
+    assert(Array.isArray(deployment.localDashboardHostnames) && deployment.localDashboardHostnames.length > 0,
+      `${code} must declare local dashboard hostnames`)
+    assert(deployment.localDashboardHostnames.every((host) => host === 'localhost' || host === '127.0.0.1' || hostnamePattern.test(host)),
+      `${code} has an invalid local dashboard hostname`)
+    assert(new Set(deployment.localDashboardHostnames).size === deployment.localDashboardHostnames.length,
+      `${code} has duplicate local dashboard hostnames`)
+    for (const host of deployment.localDashboardHostnames) assertUnique(localHosts, host, 'local dashboard hostname')
+
+    assert(hostnamePattern.test(deployment.apiHostname ?? ''), `${code} has an invalid API hostname`)
+    assertUnique(apiHosts, deployment.apiHostname, 'API hostname')
+    assert(environmentVariablePattern.test(deployment.cognitoClientEnv ?? ''), `${code} has an invalid Cognito client environment key`)
+    assertUnique(clientIdEnvironments, deployment.cognitoClientEnv, 'Cognito client environment key')
+    assert(hostnamePattern.test(deployment.emailDomain ?? ''), `${code} has an invalid email domain`)
+    assertUnique(emailDomains, deployment.emailDomain, 'email domain')
+    assert(deployment.dashboardHostname.endsWith(`.${deployment.emailDomain}`), `${code} dashboard hostname must belong to its email domain`)
+    assert(deployment.apiHostname.endsWith(`.${deployment.emailDomain}`), `${code} API hostname must belong to its email domain`)
+
+    assert(workerTopicPattern.test(worker?.productionTopic ?? ''), `${code} has an invalid worker topic`)
+    assertUnique(workerTopics, worker.productionTopic, 'worker topic')
+  }
+}
+
+export function validateRequestContext(requestContext) {
+  assert(requestContext?.schemaVersion === 1, 'Request context contract must use schemaVersion 1')
+  const headerNames = Object.values(requestContext.headers ?? {})
+  assert(headerNames.length === 4 && new Set(headerNames).size === headerNames.length,
+    'Request context contract must declare four unique headers')
+  assert(headerNames.every((header) => typeof header === 'string' && /^x-[a-z0-9-]+$/.test(header.toLowerCase())),
+    'Request context headers must use the x- prefix')
+  assert(requestContext.workspaceModes?.includes('organization') && requestContext.workspaceModes?.includes('platform'),
+    'Request context contract must declare organization and platform modes')
+  assert(requestContext.rules?.headersAreAuthorization === false, 'Request context headers must never grant authorization')
+}
+
+export function validateRuntimeMessages(runtimeMessages) {
+  assert(runtimeMessages?.schemaVersion === 1, 'Runtime message contract must use schemaVersion 1')
+  const mediaFixture = runtimeMessages.mediaProcessing?.sqsFixtures?.[0]?.message
+  assert(mediaFixture?.target_type === 'moment' && mediaFixture.is_video === false,
+    'Runtime message contract must contain an image moment SQS fixture')
+  for (const key of ['moment_id', 'event_id', 'job_id', 'object_key', 'raw_s3_key', 'bucket', 'content_type']) {
+    assert(mediaFixture[key], `Media SQS fixture is missing ${key}`)
+  }
+  const callbackFixture = runtimeMessages.mediaProcessing?.callbackFixtures?.[0]?.payload
+  assert(callbackFixture?.processing_status === 'done' && callbackFixture.object_key && callbackFixture.content_url,
+    'Runtime message contract must contain a terminal media callback fixture')
+  const workerFixture = runtimeMessages.workerJobs?.[0]?.envelope
+  assert(workerFixture?.schema_version === 2 && workerFixture.type === 'analytics.rollup',
+    'Runtime message contract must contain an analytics.rollup v2 fixture')
+  assert(workerFixture.payload?.event_id && workerFixture.payload?.trigger === 'analytics_read',
+    'Analytics worker fixture has an invalid payload')
+}
