@@ -4,7 +4,7 @@
     {
       "code": "eventiapp",
       "identity": { "name": "EventiApp", "productLabel": "Event operations", "accent": "#818cf8" },
-      "capabilities": { "allowsPlatformAuthority": true, "supportsEventOperations": true },
+      "capabilities": { "allowsPlatformAuthority": true, "supportsEventOperations": true, "supportsAutomation": false },
       "modules": ["home", "events", "metrics"],
       "deployment": {
         "dashboardHostname": "dashboard.eventiapp.com.mx",
@@ -19,8 +19,8 @@
     {
       "code": "itbem",
       "identity": { "name": "ITBEM", "productLabel": "Business operations", "accent": "#22d3ee" },
-      "capabilities": { "allowsPlatformAuthority": true, "supportsEventOperations": false },
-      "modules": ["home", "users", "organizations", "metrics"],
+      "capabilities": { "allowsPlatformAuthority": true, "supportsEventOperations": false, "supportsAutomation": true },
+      "modules": ["home", "users", "organizations", "metrics", "automation"],
       "deployment": {
         "dashboardHostname": "dashboard.itbem.com.mx",
         "dashboardHostnames": ["dashboard.itbem.com.mx", "dashboard.itbem.com"],
@@ -34,7 +34,7 @@
     {
       "code": "cafettonhouse",
       "identity": { "name": "Cafetton House", "productLabel": "Client operations", "accent": "#d97706" },
-      "capabilities": { "allowsPlatformAuthority": false, "supportsEventOperations": false },
+      "capabilities": { "allowsPlatformAuthority": false, "supportsEventOperations": false, "supportsAutomation": false },
       "modules": ["home", "users", "organizations", "metrics"],
       "deployment": {
         "dashboardHostname": "dashboard.cafettonhouse.com",
