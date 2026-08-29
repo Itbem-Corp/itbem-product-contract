@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Language-neutral durable handoffs between the API control plane and specialized asynchronous runtimes.",
+  "runtimeOwners": [
+    "api",
+    "rust-worker",
+    "lambda",
+    "local-ai-agent"
+  ],
+  "invariants": {
+    "apiPersistsAuthoritativeIntent": true,
+    "handoffsUseTransactionalOutbox": true,
+    "directCrossRuntimeQueueWritesForbidden": true,
+    "payloadsAreReferencesNotInlineSecrets": true,
+    "everyHandoffHasIdempotencyKey": true,
+    "everyHandoffHasQueryableOutcome": true,
+    "consumersTreatDuplicateDeliveryAsNormal": true
+  },
+  "delegationPolicy": {
+    "selectionIsByExecutionProfileNotLanguage": true,
+    "apiRetainsOnlyAuthoritativeInteractiveWork": true,
+    "newCapabilitiesMayMoveFromApiToRustWorker": true,
+    "newCapabilitiesMayMoveFromApiToLambda": true,
+    "deferredApiRequestsReturnAcceptedWithObservableStatus": true,
+    "eachCapabilityHasDedicatedRuntimeAndQueueNamespace": true
+  },
+  "executionProfiles": [
+    {
+      "runtime": "api",
+      "best_for": ["authorization", "transactional domain writes", "short reads", "starting durable work"],
+      "must_not_absorb": ["long retries", "burst processing", "heavy transforms"]
+    },
+    {
+      "runtime": "rust-worker",
+      "best_for": ["controlled concurrency", "durable retries", "batch and throughput work", "external API reconciliation"]
+    },
+    {
+      "runtime": "lambda",
+      "best_for": ["isolated event steps", "bursty short or medium work", "file transforms", "resource-isolated processing"]
+    },
+    {
+      "runtime": "local-ai-agent",
+      "best_for": ["approved local workspaces", "model execution", "browser QA", "private visual evidence"]
+    }
+  ],
+  "handoffFixture": {
+    "schema_version": 1,
+    "handoff_id": "9d9a6ec8-5ec0-4d90-b665-4daaafbc7e0e",
+    "correlation_id": "request-runtime-contract-001",
+    "causation_id": "outbox-event-3b3c3b01",
+    "idempotency_key": "eventiapp:document-import:7c9e6679:normalize:v1",
+    "tenant_code": "eventiapp",
+    "source": {
+      "runtime": "api",
+      "execution_id": "import-7c9e6679"
+    },
+    "target": {
+      "runtime": "rust-worker",
+      "capability": "document.normalize",
+      "queue_namespace": "rust-worker-prod-document"
+    },
+    "payload_ref": "s3://eventiapp-runtime-contract-fixture/delegations/import-7c9e6679/input.json",
+    "requested_at": "2026-08-09T18:00:00Z"
+  },
+  "outcomeFixture": {
+    "schema_version": 1,
+    "handoff_id": "9d9a6ec8-5ec0-4d90-b665-4daaafbc7e0e",
+    "correlation_id": "request-runtime-contract-001",
+    "idempotency_key": "eventiapp:document-import:7c9e6679:normalize:v1",
+    "owner_runtime": "rust-worker",
+    "status": "completed",
+    "result_ref": "s3://eventiapp-runtime-contract-fixture/delegations/import-7c9e6679/result.json",
+    "evidence_refs": [
+      "s3://eventiapp-runtime-contract-fixture/delegations/import-7c9e6679/validation.json"
+    ],
+    "completed_at": "2026-08-09T18:00:04Z"
+  },
+  "workflowFixture": [
+    {
+      "step": 1,
+      "owner_runtime": "api",
+      "action": "authorize_and_record_intent",
+      "public_status": "accepted"
+    },
+    {
+      "step": 2,
+      "owner_runtime": "rust-worker",
+      "action": "normalize_and_reconcile",
+      "public_status": "processing"
+    },
+    {
+      "step": 3,
+      "owner_runtime": "lambda",
+      "action": "create_document_preview",
+      "public_status": "processing"
+    },
+    {
+      "step": 4,
+      "owner_runtime": "rust-worker",
+      "action": "project_observable_result",
+      "public_status": "completed"
+    }
+  ]
+}
