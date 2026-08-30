@@ -34,7 +34,8 @@ test('rejects ambiguous public surfaces and capability drift', () => {
     enabled: true,
     canonicalHostname: 'www.eventiapp.com.mx',
     hostnames: ['www.eventiapp.com.mx'],
-    deploymentTarget: 'cloudflare-workers'
+    deploymentTarget: 'cloudflare-workers',
+    branding: structuredClone(duplicatePublicHost.products[0].deployment.publicExperience.branding)
   }
   assert.throws(() => validateProductContract(duplicatePublicHost), /owned domain|Duplicate public hostname/)
 
@@ -45,4 +46,8 @@ test('rejects ambiguous public surfaces and capability drift', () => {
   const capabilityDrift = clone(readJson('../contract/products.v1.json'))
   capabilityDrift.products[2].modules.push('automation')
   assert.throws(() => validateProductContract(capabilityDrift), /automation module/)
+
+  const invalidBrand = clone(readJson('../contract/products.v1.json'))
+  invalidBrand.products[0].deployment.publicExperience.branding.themeColor = 'pink'
+  assert.throws(() => validateProductContract(invalidBrand), /invalid theme colors/)
 })

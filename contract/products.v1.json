@@ -18,7 +18,15 @@
           "enabled": true,
           "canonicalHostname": "www.eventiapp.com.mx",
           "hostnames": ["eventiapp.com.mx", "www.eventiapp.com.mx"],
-          "deploymentTarget": "cloudflare-workers"
+          "deploymentTarget": "cloudflare-workers",
+          "branding": {
+            "name": "EventiApp",
+            "shortName": "EventiApp",
+            "description": "Tu invitación digital",
+            "locale": "es-MX",
+            "themeColor": "#dd2284",
+            "backgroundColor": "#07293a"
+          }
         }
       },
       "worker": { "productionTopic": "eventiapp-prod-worker-jobs" }

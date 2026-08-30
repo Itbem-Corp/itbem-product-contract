@@ -94,6 +94,14 @@ export function validateProductContract(contract) {
         `${code} has duplicate public hostname aliases`)
       assert(publicExperience.deploymentTarget === 'cloudflare-workers',
         `${code} has an unsupported public deployment target`)
+      const branding = publicExperience.branding
+      assert(typeof branding?.name === 'string' && branding.name.length > 0 &&
+        typeof branding?.shortName === 'string' && branding.shortName.length > 0 &&
+        typeof branding?.description === 'string' && branding.description.length > 0,
+      `${code} public experience has incomplete branding`)
+      assert(/^[a-z]{2}-[A-Z]{2}$/.test(branding?.locale ?? ''), `${code} public experience has an invalid locale`)
+      assert(/^#[0-9a-fA-F]{6}$/.test(branding?.themeColor ?? '') && /^#[0-9a-fA-F]{6}$/.test(branding?.backgroundColor ?? ''),
+        `${code} public experience has invalid theme colors`)
       for (const host of publicExperience.hostnames) {
         assert(hostnamePattern.test(host), `${code} has an invalid public hostname alias`)
         assert(belongsToOwnedDomain(host, deployment.ownedDomains),
