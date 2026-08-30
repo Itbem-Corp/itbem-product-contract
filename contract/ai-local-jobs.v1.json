@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "product": "itbem",
+  "localAgent": {
+    "queuePurpose": "Private pull queue for a locally operated AI agent. EventiApp and event workers must never publish to or consume this queue.",
+    "jobFixture": {
+      "schema_version": 1,
+      "job_id": "a13d3b5f-9f83-40d8-b954-c1ba3f4b1da4",
+      "tenant_code": "itbem",
+      "correlation_id": "automation-request-001",
+      "type": "ai.local.process",
+      "payload": {
+        "task_id": "4e461ed7-2328-4c51-bd10-2f4e8a608e75",
+        "operation": "document.analyze",
+        "input_ref": "s3://itbem-private-inputs/automation/4e461ed7-2328-4c51-bd10-2f4e8a608e75/input.pdf",
+        "attempt": 1
+      }
+    },
+    "callbackFixture": {
+      "task_id": "4e461ed7-2328-4c51-bd10-2f4e8a608e75",
+      "tenant_code": "itbem",
+      "job_id": "a13d3b5f-9f83-40d8-b954-c1ba3f4b1da4",
+      "status": "completed",
+      "output_ref": "s3://itbem-private-outputs/automation/4e461ed7-2328-4c51-bd10-2f4e8a608e75/result.json",
+      "provider": "minimax",
+      "model": "MiniMax-M3",
+      "usage": { "prompt_tokens": 42, "completion_tokens": 128, "total_tokens": 170 }
+    }
+  }
+}
