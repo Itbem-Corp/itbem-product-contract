@@ -10,6 +10,7 @@
     "test": "node --test test/invariants.test.mjs",
     "check:fast": "node scripts/validate.mjs",
     "check": "node scripts/validate.mjs",
-    "catalog:dashboard": "node scripts/render-dashboard-catalog.mjs"
+    "catalog:dashboard": "node scripts/render-dashboard-catalog.mjs",
+    "catalog:public": "node scripts/render-public-catalog.mjs"
   }
 }

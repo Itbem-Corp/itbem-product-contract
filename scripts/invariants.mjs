@@ -11,6 +11,14 @@ function assertUnique(values, value, label) {
   values.add(value)
 }
 
+function belongsToOwnedDomain(hostname, ownedDomains) {
+  return ownedDomains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`))
+}
+
+function domainsOverlap(left, right) {
+  return left === right || left.endsWith(`.${right}`) || right.endsWith(`.${left}`)
+}
+
 export function validateProductContract(contract) {
   assert(contract?.schemaVersion === 1 && Array.isArray(contract.products) && contract.products.length > 0,
     'Contract must declare schemaVersion 1 and at least one product')
@@ -22,6 +30,8 @@ export function validateProductContract(contract) {
   const clientIdEnvironments = new Set()
   const emailDomains = new Set()
   const workerTopics = new Set()
+  const publicHosts = new Set()
+  const ownedDomains = new Set()
 
   for (const product of contract.products) {
     const { code, identity, capabilities, modules, deployment, worker } = product
@@ -29,20 +39,39 @@ export function validateProductContract(contract) {
     codes.add(code)
     assert(identity?.name && identity?.productLabel && /^#[0-9a-fA-F]{6}$/.test(identity?.accent ?? ''),
       `${code} has incomplete visual identity`)
-    assert(typeof capabilities?.allowsPlatformAuthority === 'boolean' && typeof capabilities?.supportsEventOperations === 'boolean',
+    assert(typeof capabilities?.allowsPlatformAuthority === 'boolean' &&
+      typeof capabilities?.supportsEventOperations === 'boolean' &&
+      typeof capabilities?.supportsAutomation === 'boolean',
       `${code} must declare boolean capabilities`)
     assert(capabilities.supportsEventOperations === (code === 'eventiapp'), 'Event operations are exclusive to eventiapp')
+    assert(capabilities.supportsAutomation === (code === 'itbem'), 'Automation is exclusive to itbem')
     assert(Array.isArray(modules) && modules.includes('home'), `${code} must contain the home module`)
     assert(modules.every((module) => /^[a-z][a-z0-9-]*$/.test(module)), `${code} has an invalid module name`)
     assert(new Set(modules).size === modules.length, `${code} has duplicate modules`)
+    assert(modules.includes('events') === capabilities.supportsEventOperations,
+      `${code} event module must match its event-operations capability`)
+    assert(modules.includes('automation') === capabilities.supportsAutomation,
+      `${code} automation module must match its automation capability`)
 
     assert(deployment && typeof deployment === 'object', `${code} has no deployment definition`)
+    assert(Array.isArray(deployment.ownedDomains) && deployment.ownedDomains.length > 0,
+      `${code} must declare at least one owned domain`)
+    assert(deployment.ownedDomains.every((domain) => hostnamePattern.test(domain)), `${code} has an invalid owned domain`)
+    assert(new Set(deployment.ownedDomains).size === deployment.ownedDomains.length, `${code} has duplicate owned domains`)
+    for (const domain of deployment.ownedDomains) {
+      assert(![...ownedDomains].some((existing) => domainsOverlap(domain, existing)),
+        `Owned domain overlaps another product boundary: ${domain}`)
+      ownedDomains.add(domain)
+    }
     assert(hostnamePattern.test(deployment.dashboardHostname ?? ''), `${code} has an invalid dashboard hostname`)
     assert(Array.isArray(deployment.dashboardHostnames) && deployment.dashboardHostnames.includes(deployment.dashboardHostname),
       `${code} primary dashboard hostname must be declared`)
     assert(deployment.dashboardHostnames.every((host) => hostnamePattern.test(host)), `${code} has an invalid dashboard hostname alias`)
     assert(new Set(deployment.dashboardHostnames).size === deployment.dashboardHostnames.length, `${code} has duplicate dashboard hostname aliases`)
-    for (const host of deployment.dashboardHostnames) assertUnique(hosts, host, 'dashboard hostname')
+    for (const host of deployment.dashboardHostnames) {
+      assert(belongsToOwnedDomain(host, deployment.ownedDomains), `${code} dashboard hostname alias must belong to an owned domain`)
+      assertUnique(hosts, host, 'dashboard hostname')
+    }
 
     assert(Array.isArray(deployment.localDashboardHostnames) && deployment.localDashboardHostnames.length > 0,
       `${code} must declare local dashboard hostnames`)
@@ -58,8 +87,40 @@ export function validateProductContract(contract) {
     assertUnique(clientIdEnvironments, deployment.cognitoClientEnv, 'Cognito client environment key')
     assert(hostnamePattern.test(deployment.emailDomain ?? ''), `${code} has an invalid email domain`)
     assertUnique(emailDomains, deployment.emailDomain, 'email domain')
-    assert(deployment.dashboardHostname.endsWith(`.${deployment.emailDomain}`), `${code} dashboard hostname must belong to its email domain`)
-    assert(deployment.apiHostname.endsWith(`.${deployment.emailDomain}`), `${code} API hostname must belong to its email domain`)
+    assert(deployment.ownedDomains.includes(deployment.emailDomain), `${code} email domain must be an owned domain`)
+    assert(belongsToOwnedDomain(deployment.dashboardHostname, deployment.ownedDomains), `${code} dashboard hostname must belong to an owned domain`)
+    assert(belongsToOwnedDomain(deployment.apiHostname, deployment.ownedDomains), `${code} API hostname must belong to an owned domain`)
+
+    const publicExperience = deployment.publicExperience
+    assert(publicExperience && typeof publicExperience.enabled === 'boolean',
+      `${code} must explicitly declare whether it has a public experience`)
+    if (publicExperience.enabled) {
+      assert(hostnamePattern.test(publicExperience.canonicalHostname ?? ''), `${code} has an invalid public canonical hostname`)
+      assert(Array.isArray(publicExperience.hostnames) && publicExperience.hostnames.includes(publicExperience.canonicalHostname),
+        `${code} public canonical hostname must be declared`)
+      assert(new Set(publicExperience.hostnames).size === publicExperience.hostnames.length,
+        `${code} has duplicate public hostname aliases`)
+      assert(publicExperience.deploymentTarget === 'cloudflare-workers',
+        `${code} has an unsupported public deployment target`)
+      const branding = publicExperience.branding
+      assert(typeof branding?.name === 'string' && branding.name.length > 0 &&
+        typeof branding?.shortName === 'string' && branding.shortName.length > 0 &&
+        typeof branding?.description === 'string' && branding.description.length > 0,
+      `${code} public experience has incomplete branding`)
+      assert(/^[a-z]{2}-[A-Z]{2}$/.test(branding?.locale ?? ''), `${code} public experience has an invalid locale`)
+      assert(/^#[0-9a-fA-F]{6}$/.test(branding?.themeColor ?? '') && /^#[0-9a-fA-F]{6}$/.test(branding?.backgroundColor ?? ''),
+        `${code} public experience has invalid theme colors`)
+      for (const host of publicExperience.hostnames) {
+        assert(hostnamePattern.test(host), `${code} has an invalid public hostname alias`)
+        assert(belongsToOwnedDomain(host, deployment.ownedDomains),
+          `${code} public hostname must belong to an owned domain`)
+        assert(!hosts.has(host) && !apiHosts.has(host), `${code} public hostname collides with a dashboard or API hostname`)
+        assertUnique(publicHosts, host, 'public hostname')
+      }
+    } else {
+      assert(Object.keys(publicExperience).length === 1,
+        `${code} disabled public experience cannot reserve hostnames or a deployment target`)
+    }
 
     assert(workerTopicPattern.test(worker?.productionTopic ?? ''), `${code} has an invalid worker topic`)
     assertUnique(workerTopics, worker.productionTopic, 'worker topic')

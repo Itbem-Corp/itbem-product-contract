@@ -51,3 +51,15 @@ or publish directly into another runtime's queue.
 `npm run catalog:dashboard` renders the data-only dashboard catalog. Product
 routes and UI behavior remain local intentionally; they are implementation,
 not shared deployment identity.
+
+`deployment.ownedDomains` is the allow-list for every production hostname a
+product may claim. A product can own more than one registrable domain (for
+example ITBEM owns both `itbem.com.mx` and `itbem.com`) without weakening the
+fail-closed hostname boundary. `deployment.publicExperience` separately says
+whether the product has a customer-facing site, its canonical hostname and the
+existing deployment target. A disabled public experience reserves nothing.
+
+`npm run catalog:public` renders only enabled public experiences. Public UI
+copy and page composition stay in their frontend repository; canonical hosts,
+API ownership and provider placement do not. Both catalog commands are build-
+time projections and add no runtime dependency or infrastructure cost.
