@@ -18,7 +18,18 @@ export function dashboardCatalog(contract = loadContract()) {
       hostnames: product.deployment.dashboardHostnames,
       localHostnames: product.deployment.localDashboardHostnames,
       apiHostname: product.deployment.apiHostname,
-      clientIdEnv: product.deployment.cognitoClientEnv
+      clientIdEnv: product.deployment.cognitoClientEnv,
+      publicExperience: product.deployment.publicExperience
     }
   }]))
+}
+
+export function publicExperienceCatalog(contract = loadContract()) {
+  return Object.fromEntries(contract.products
+    .filter((product) => product.deployment.publicExperience.enabled)
+    .map((product) => [product.code, {
+      identity: product.identity,
+      apiHostname: product.deployment.apiHostname,
+      ...product.deployment.publicExperience
+    }]))
 }
