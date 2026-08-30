@@ -19,6 +19,7 @@ export function dashboardCatalog(contract = loadContract()) {
       localHostnames: product.deployment.localDashboardHostnames,
       apiHostname: product.deployment.apiHostname,
       clientIdEnv: product.deployment.cognitoClientEnv,
+      ownedDomains: product.deployment.ownedDomains,
       publicExperience: product.deployment.publicExperience
     }
   }]))
