@@ -28,6 +28,12 @@ test('rejects duplicate modules and Cognito client keys', () => {
   assert.throws(() => validateProductContract(duplicateClientKey), /Duplicate Cognito client environment key/)
 })
 
+test('rejects overlapping root and delegated product domains', () => {
+  const contract = clone(readJson('../contract/products.v1.json'))
+  contract.products[2].deployment.ownedDomains = ['shop.eventiapp.com.mx']
+  assert.throws(() => validateProductContract(contract), /Owned domain overlaps another product boundary/)
+})
+
 test('rejects ambiguous public surfaces and capability drift', () => {
   const duplicatePublicHost = clone(readJson('../contract/products.v1.json'))
   duplicatePublicHost.products[1].deployment.publicExperience = {

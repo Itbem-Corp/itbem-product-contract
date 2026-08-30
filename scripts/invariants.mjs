@@ -15,6 +15,10 @@ function belongsToOwnedDomain(hostname, ownedDomains) {
   return ownedDomains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`))
 }
 
+function domainsOverlap(left, right) {
+  return left === right || left.endsWith(`.${right}`) || right.endsWith(`.${left}`)
+}
+
 export function validateProductContract(contract) {
   assert(contract?.schemaVersion === 1 && Array.isArray(contract.products) && contract.products.length > 0,
     'Contract must declare schemaVersion 1 and at least one product')
@@ -54,7 +58,11 @@ export function validateProductContract(contract) {
       `${code} must declare at least one owned domain`)
     assert(deployment.ownedDomains.every((domain) => hostnamePattern.test(domain)), `${code} has an invalid owned domain`)
     assert(new Set(deployment.ownedDomains).size === deployment.ownedDomains.length, `${code} has duplicate owned domains`)
-    for (const domain of deployment.ownedDomains) assertUnique(ownedDomains, domain, 'owned domain')
+    for (const domain of deployment.ownedDomains) {
+      assert(![...ownedDomains].some((existing) => domainsOverlap(domain, existing)),
+        `Owned domain overlaps another product boundary: ${domain}`)
+      ownedDomains.add(domain)
+    }
     assert(hostnamePattern.test(deployment.dashboardHostname ?? ''), `${code} has an invalid dashboard hostname`)
     assert(Array.isArray(deployment.dashboardHostnames) && deployment.dashboardHostnames.includes(deployment.dashboardHostname),
       `${code} primary dashboard hostname must be declared`)
