@@ -33,7 +33,7 @@
     },
     {
       "code": "itbem",
-      "identity": { "name": "ITBEM", "productLabel": "Business operations", "accent": "#22d3ee" },
+      "identity": { "name": "ITBEM", "productLabel": "Business operations", "accent": "#3f4650" },
       "capabilities": { "allowsPlatformAuthority": true, "supportsEventOperations": false, "supportsAutomation": true },
       "modules": ["home", "users", "organizations", "metrics", "automation"],
       "deployment": {
