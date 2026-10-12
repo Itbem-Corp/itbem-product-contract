@@ -3,7 +3,8 @@
 This is the versioned, language-neutral source of truth for product identity,
 capabilities, public entry points, Cognito environment keys and worker topics.
 The request-context contract also owns the dashboard-to-API header names and
-workspace invariants shared by frontend and backend projections.
+workspace invariants shared by frontend and backend projections (see
+[Request context](#request-context)).
 `contract/runtime-messages.v1.json` contains canonical, credential-free
 fixtures for API-to-SQS messages and Lambda callbacks; the workspace uses them
 to exercise the API, worker, and media message parsers together.
@@ -22,6 +23,34 @@ Each deployable repository pins a contract revision and validates its local
 projection during CI. Runtime services keep generated/static definitions: no
 request makes a network call to load this contract, so adding governance does
 not alter API or dashboard latency.
+
+## Request context
+
+`contract/request-context.v1.json` names the four dashboard-to-API headers and
+the two workspace modes. Its `rules` are the invariants every projection keeps:
+
+- Before the session resolves, a client sends only `X-Application-Code`
+  (`bootstrapHeaders`). The product still comes from the authenticated token;
+  the header must match it.
+- `platform` mode never carries `X-Organization-ID`
+  (`platformForbidsOrganizationId: true`).
+- `organization` mode with `X-Organization-ID` selects one organization the
+  session may use, proven by the short-lived `X-Organization-Context`
+  credential.
+- `organization` mode without `X-Organization-ID` is valid
+  (`organizationRequiresOrganizationId: false`) and has the `caller-access`
+  scope (`organizationWithoutIdScope`). Organization mode without an
+  organization id scopes reads to every organization membership and event
+  grant of the caller; writes are authorized per resource; no
+  organization-context credential is issued or required, and an
+  `X-Organization-Context` sent without an organization id is rejected.
+- Headers never authorize (`headersAreAuthorization: false`). They only select
+  a workspace the caller already holds; every route still runs its own
+  resource authorization.
+
+`npm test` rejects a contract that lets platform mode take an organization id,
+drops the organization id without declaring a known scope, declares a scope
+while still requiring the id, or makes headers authorize.
 
 ## Verification ownership
 
