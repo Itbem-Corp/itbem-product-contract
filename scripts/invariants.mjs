@@ -1,6 +1,10 @@
 const hostnamePattern = /^(?=.{1,253}$)(?!-)[a-z0-9-]+(?:\.(?!-)[a-z0-9-]+)+$/
 const environmentVariablePattern = /^[A-Z][A-Z0-9_]*$/
 const workerTopicPattern = /^[a-z][a-z0-9-]{0,79}$/
+// caller-access: organization mode without X-Organization-ID reads across the
+// caller's own organization memberships and event grants. It never widens
+// authorization: every write is still checked against its resource.
+const organizationWithoutIdScopes = ['caller-access']
 
 function assert(condition, message) {
   if (!condition) throw new Error(message)
@@ -136,7 +140,21 @@ export function validateRequestContext(requestContext) {
     'Request context headers must use the x- prefix')
   assert(requestContext.workspaceModes?.includes('organization') && requestContext.workspaceModes?.includes('platform'),
     'Request context contract must declare organization and platform modes')
-  assert(requestContext.rules?.headersAreAuthorization === false, 'Request context headers must never grant authorization')
+  const rules = requestContext.rules ?? {}
+  assert(rules.headersAreAuthorization === false, 'Request context headers must never grant authorization')
+  assert(rules.platformForbidsOrganizationId === true, 'Platform workspace must forbid an organization id')
+  assert(typeof rules.organizationRequiresOrganizationId === 'boolean',
+    'Request context organizationRequiresOrganizationId must be a boolean')
+  const hasScope = Object.hasOwn(rules, 'organizationWithoutIdScope')
+  if (hasScope) {
+    assert(organizationWithoutIdScopes.includes(rules.organizationWithoutIdScope),
+      `Unknown organizationWithoutIdScope: ${rules.organizationWithoutIdScope}`)
+  }
+  if (rules.organizationRequiresOrganizationId) {
+    assert(!hasScope, 'An organization workspace that requires an id cannot declare organizationWithoutIdScope')
+  } else {
+    assert(hasScope, 'An organization workspace without an id must declare organizationWithoutIdScope')
+  }
 }
 
 export function validateRuntimeMessages(runtimeMessages) {

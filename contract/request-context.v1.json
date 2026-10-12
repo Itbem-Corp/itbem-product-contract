@@ -9,7 +9,8 @@
   "workspaceModes": ["organization", "platform"],
   "rules": {
     "bootstrapHeaders": ["applicationCode"],
-    "organizationRequiresOrganizationId": true,
+    "organizationRequiresOrganizationId": false,
+    "organizationWithoutIdScope": "caller-access",
     "platformForbidsOrganizationId": true,
     "headersAreAuthorization": false
   }

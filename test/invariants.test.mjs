@@ -57,3 +57,50 @@ test('rejects ambiguous public surfaces and capability drift', () => {
   invalidBrand.products[0].deployment.publicExperience.branding.themeColor = 'pink'
   assert.throws(() => validateProductContract(invalidBrand), /invalid theme colors/)
 })
+
+test('declares organization mode without an organization id as the caller-access scope', () => {
+  const { rules } = readJson('../contract/request-context.v1.json')
+  assert.equal(rules.organizationRequiresOrganizationId, false)
+  assert.equal(rules.organizationWithoutIdScope, 'caller-access')
+  assert.equal(rules.platformForbidsOrganizationId, true)
+  assert.equal(rules.headersAreAuthorization, false)
+})
+
+test('rejects request-context headers that would grant authorization', () => {
+  const contract = clone(readJson('../contract/request-context.v1.json'))
+  contract.rules.headersAreAuthorization = true
+  assert.throws(() => validateRequestContext(contract), /headers must never grant authorization/)
+})
+
+test('rejects a platform workspace that accepts an organization id', () => {
+  const contract = clone(readJson('../contract/request-context.v1.json'))
+  contract.rules.platformForbidsOrganizationId = false
+  assert.throws(() => validateRequestContext(contract), /Platform workspace must forbid an organization id/)
+
+  delete contract.rules.platformForbidsOrganizationId
+  assert.throws(() => validateRequestContext(contract), /Platform workspace must forbid an organization id/)
+})
+
+test('rejects an organization workspace without an id that has no declared scope', () => {
+  const missingScope = clone(readJson('../contract/request-context.v1.json'))
+  missingScope.rules.organizationRequiresOrganizationId = false
+  delete missingScope.rules.organizationWithoutIdScope
+  assert.throws(() => validateRequestContext(missingScope), /must declare organizationWithoutIdScope/)
+
+  const unknownScope = clone(readJson('../contract/request-context.v1.json'))
+  unknownScope.rules.organizationWithoutIdScope = 'all-organizations'
+  assert.throws(() => validateRequestContext(unknownScope), /Unknown organizationWithoutIdScope: all-organizations/)
+
+  const ambiguousRequirement = clone(readJson('../contract/request-context.v1.json'))
+  delete ambiguousRequirement.rules.organizationRequiresOrganizationId
+  assert.throws(() => validateRequestContext(ambiguousRequirement), /organizationRequiresOrganizationId must be a boolean/)
+})
+
+test('rejects a scope for organization requests that always carry an id', () => {
+  const contract = clone(readJson('../contract/request-context.v1.json'))
+  contract.rules.organizationRequiresOrganizationId = true
+  assert.throws(() => validateRequestContext(contract), /cannot declare organizationWithoutIdScope/)
+
+  delete contract.rules.organizationWithoutIdScope
+  validateRequestContext(contract)
+})
